@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:project/screens/register_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:project/screens/ngo_dashboard.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'admin_dashboard.dart';
 import 'user_dashboard.dart';
+import 'ngo_dashboard.dart';
 
 class LoginScreen extends StatelessWidget {
   final TextEditingController emailCtrl = TextEditingController();
@@ -18,6 +18,15 @@ class LoginScreen extends StatelessWidget {
         email: emailCtrl.text.trim(),
         password: passCtrl.text.trim(),
       );
+
+      // // Check if email is verified
+      // if (!(userCred.user?.emailVerified ?? false)) {
+      //   await FirebaseAuth.instance.signOut();
+      //   ScaffoldMessenger.of(context).showSnackBar(
+      //     const SnackBar(content: Text('Please verify your email before logging in.')),
+      //   );
+      //   return;
+      // }
 
       final roleDoc = await FirebaseFirestore.instance
           .collection('users')
@@ -41,6 +50,10 @@ class LoginScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('Welcome to LocalLoop'),
+        leading: SizedBox.shrink(),
+      ),
       backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
       body: Center(
         child: SingleChildScrollView(
@@ -91,7 +104,47 @@ class LoginScreen extends StatelessWidget {
                     onPressed: () {
                       Navigator.push(context, MaterialPageRoute(builder: (_) => const RegisterScreen()));
                     },
-                    child: const Text(' Register'),
+                    child: const Text('No account? Register'),
+                  ),
+                  TextButton(
+                    onPressed: () async {
+                      final email = await showDialog<String>(
+                        context: context,
+                        builder: (context) {
+                          final ctrl = TextEditingController();
+                          return AlertDialog(
+                            title: const Text('Reset Password'),
+                            content: TextField(
+                              controller: ctrl,
+                              decoration: const InputDecoration(labelText: 'Enter your email'),
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context, null),
+                                child: const Text('Cancel'),
+                              ),
+                              TextButton(
+                                onPressed: () => Navigator.pop(context, ctrl.text.trim()),
+                                child: const Text('Send'),
+                              ),
+                            ],
+                          );
+                        },
+                      );
+                      if (email != null && email.isNotEmpty) {
+                        try {
+                          await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Password reset email sent!')),
+                          );
+                        } catch (e) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Error: $e')),
+                          );
+                        }
+                      }
+                    },
+                    child: const Text('Forgot Password?'),
                   ),
                 ],
               ),

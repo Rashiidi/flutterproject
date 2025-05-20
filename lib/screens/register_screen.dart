@@ -12,23 +12,40 @@ class RegisterScreen extends StatefulWidget {
 class _RegisterScreenState extends State<RegisterScreen> {
   final emailCtrl = TextEditingController();
   final passCtrl = TextEditingController();
+  final confirmPassCtrl = TextEditingController();
   String selectedRole = 'user';
 
   Future<void> registerUser() async {
+    if (passCtrl.text != confirmPassCtrl.text) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Passwords do not match!')),
+      );
+      return;
+    }
     try {
       final userCred = await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: emailCtrl.text.trim(),
         password: passCtrl.text.trim(),
       );
 
+      // // Send email verification
+      // await userCred.user!.sendEmailVerification();
+
+      // Save user data to Firestore
       await FirebaseFirestore.instance.collection('users').doc(userCred.user!.uid).set({
         'email': emailCtrl.text.trim(),
         'role': selectedRole,
       });
 
-      Navigator.pop(context);
+      // ScaffoldMessenger.of(context).showSnackBar(
+      //   const SnackBar(content: Text('Verification email sent. Please verify your email before logging in.')),
+      // );
+
+      Navigator.pop(context); // Navigate back to the previous screen
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Register failed: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Register failed: $e')),
+      );
     }
   }
 
@@ -67,6 +84,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     controller: passCtrl,
                     decoration: InputDecoration(
                       labelText: 'Password',
+                      prefixIcon: Icon(Icons.lock_outline),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    obscureText: true,
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: confirmPassCtrl,
+                    decoration: InputDecoration(
+                      labelText: 'Confirm Password',
                       prefixIcon: Icon(Icons.lock_outline),
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                     ),
