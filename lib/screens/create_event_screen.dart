@@ -1,3 +1,4 @@
+// ...existing imports...
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -13,6 +14,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
   final titleCtrl = TextEditingController();
   final descCtrl = TextEditingController();
   final locationCtrl = TextEditingController();
+  final durationCtrl = TextEditingController(); // <-- Add this
   DateTime? eventDate;
 
   Future<void> createEvent() async {
@@ -23,6 +25,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
       'location': locationCtrl.text,
       'date': eventDate?.toIso8601String(),
       'ngoId': ngoId,
+      'duration': double.tryParse(durationCtrl.text) ?? 1, // <-- Save duration
     });
     Navigator.pop(context);
   }
@@ -39,30 +42,42 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
               controller: titleCtrl,
               decoration: const InputDecoration(labelText: 'Title'),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
             TextField(
               controller: descCtrl,
               decoration: const InputDecoration(labelText: 'Description'),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
             TextField(
               controller: locationCtrl,
               decoration: const InputDecoration(labelText: 'Location'),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
+            TextField(
+              controller: durationCtrl,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(labelText: 'Duration (hours)'),
+            ),
+            const SizedBox(height: 8),
             ElevatedButton(
               onPressed: () async {
                 final picked = await showDatePicker(
                   context: context,
-                  initialDate: DateTime.now(),
-                  firstDate: DateTime.now(),
+                  initialDate: eventDate ?? DateTime.now(),
+                  firstDate: DateTime(2020),
                   lastDate: DateTime(2100),
                 );
-                if (picked != null) setState(() => eventDate = picked);
+                if (picked != null) {
+                  setState(() {
+                    eventDate = picked;
+                  });
+                }
               },
-              child: Text(eventDate == null ? 'Pick Date' : eventDate!.toLocal().toString().split(' ')[0]),
+              child: Text(eventDate == null
+                  ? 'Pick Date'
+                  : 'Date: ${eventDate!.toLocal().toString().split(' ').first}'),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
             ElevatedButton(
               onPressed: createEvent,
               child: const Text('Create Event'),
