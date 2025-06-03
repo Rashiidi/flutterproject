@@ -6,6 +6,7 @@ import 'package:project/screens/ngo_dashboard.dart';
 import 'package:project/screens/user_dashboard.dart';
 import 'screens/login_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:project/helpers/notification_helper.dart'; // <-- Add this import
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,6 +24,11 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Role Login',
       theme: ThemeData(useMaterial3: true),
+      builder: (context, child) {
+        // Initialize notifications once at the root
+        NotificationHelper.initialize(context);
+        return child!;
+      },
       initialRoute:
           FirebaseAuth.instance.currentUser == null ? '/login' : '/home',
       routes: {

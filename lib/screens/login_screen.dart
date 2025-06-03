@@ -54,7 +54,7 @@ class LoginScreen extends StatelessWidget {
         title: const Text('Welcome to LocalLoop'),
         leading: SizedBox.shrink(),
       ),
-      backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24.0),

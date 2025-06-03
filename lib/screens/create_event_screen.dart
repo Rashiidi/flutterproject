@@ -1,7 +1,7 @@
-// ...existing imports...
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:geolocator/geolocator.dart';
 
 class CreateEventScreen extends StatefulWidget {
   const CreateEventScreen({super.key});
@@ -14,18 +14,41 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
   final titleCtrl = TextEditingController();
   final descCtrl = TextEditingController();
   final locationCtrl = TextEditingController();
-  final durationCtrl = TextEditingController(); // <-- Add this
-  DateTime? eventDate;
+  final durationCtrl = TextEditingController();
+  DateTime? selectedDate;
+  double? _latitude;
+  double? _longitude;
+  bool _gettingLocation = false;
 
-  Future<void> createEvent() async {
-    final ngoId = FirebaseAuth.instance.currentUser!.uid;
+  Future<void> _getCurrentLocation() async {
+    setState(() => _gettingLocation = true);
+    try {
+      final pos = await Geolocator.getCurrentPosition();
+      setState(() {
+        _latitude = pos.latitude;
+        _longitude = pos.longitude;
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not get location: $e')),
+      );
+    }
+    setState(() => _gettingLocation = false);
+  }
+
+  Future<void> _saveEvent() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
     await FirebaseFirestore.instance.collection('events').add({
       'title': titleCtrl.text,
       'description': descCtrl.text,
       'location': locationCtrl.text,
-      'date': eventDate?.toIso8601String(),
-      'ngoId': ngoId,
-      'duration': double.tryParse(durationCtrl.text) ?? 1, // <-- Save duration
+      'duration': double.tryParse(durationCtrl.text) ?? 1,
+      'date': selectedDate?.toIso8601String(),
+      'ngoId': user.uid,
+      'latitude': _latitude,
+      'longitude': _longitude,
     });
     Navigator.pop(context);
   }
@@ -36,7 +59,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
       appBar: AppBar(title: const Text('Create Event')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
+        child: ListView(
           children: [
             TextField(
               controller: titleCtrl,
@@ -50,7 +73,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
             const SizedBox(height: 8),
             TextField(
               controller: locationCtrl,
-              decoration: const InputDecoration(labelText: 'Location'),
+              decoration: const InputDecoration(labelText: 'Location (address/venue)'),
             ),
             const SizedBox(height: 8),
             TextField(
@@ -63,23 +86,28 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
               onPressed: () async {
                 final picked = await showDatePicker(
                   context: context,
-                  initialDate: eventDate ?? DateTime.now(),
+                  initialDate: DateTime.now(),
                   firstDate: DateTime(2020),
                   lastDate: DateTime(2100),
                 );
                 if (picked != null) {
-                  setState(() {
-                    eventDate = picked;
-                  });
+                  setState(() => selectedDate = picked);
                 }
               },
-              child: Text(eventDate == null
+              child: Text(selectedDate == null
                   ? 'Pick Date'
-                  : 'Date: ${eventDate!.toLocal().toString().split(' ').first}'),
+                  : 'Date: ${selectedDate!.toLocal().toString().split(' ').first}'),
+            ),
+            const SizedBox(height: 8),
+            ElevatedButton(
+              onPressed: _gettingLocation ? null : _getCurrentLocation,
+              child: Text(_latitude == null
+                  ? (_gettingLocation ? 'Getting Location...' : 'Use Current Location')
+                  : 'Location Set (${_latitude!.toStringAsFixed(4)}, ${_longitude!.toStringAsFixed(4)})'),
             ),
             const SizedBox(height: 16),
             ElevatedButton(
-              onPressed: createEvent,
+              onPressed: _saveEvent,
               child: const Text('Create Event'),
             ),
           ],
