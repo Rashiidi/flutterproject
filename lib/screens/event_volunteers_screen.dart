@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+// Screen to show all volunteers registered for a specific event
 class EventVolunteersScreen extends StatelessWidget {
   final String eventId;
   final String eventTitle;
@@ -16,6 +17,7 @@ class EventVolunteersScreen extends StatelessWidget {
       ),
       body: Container(
         color: Colors.teal.shade50,
+        // Listen to all registrations for this event
         child: StreamBuilder<QuerySnapshot>(
           stream: FirebaseFirestore.instance
               .collection('events')
@@ -44,6 +46,7 @@ class EventVolunteersScreen extends StatelessWidget {
                   margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                   child: ListTile(
+                    // Avatar: shows check if attended, else person icon
                     leading: CircleAvatar(
                       backgroundColor: attended ? Colors.green.shade100 : Colors.teal.shade100,
                       child: Icon(
@@ -51,10 +54,12 @@ class EventVolunteersScreen extends StatelessWidget {
                         color: attended ? Colors.green : Colors.teal.shade900,
                       ),
                     ),
+                    // Volunteer name
                     title: Text(
                       data['displayName'] ?? 'No Name',
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
+                    // Email, role, attended chip
                     subtitle: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -62,6 +67,7 @@ class EventVolunteersScreen extends StatelessWidget {
                         const SizedBox(height: 4),
                         Row(
                           children: [
+                            // Role chip
                             Chip(
                               label: Text(
                                 data['role'] ?? 'Member',
@@ -70,6 +76,7 @@ class EventVolunteersScreen extends StatelessWidget {
                               backgroundColor: Colors.teal.shade100,
                             ),
                             const SizedBox(width: 8),
+                            // Attended chip if attended
                             if (attended)
                               const Chip(
                                 label: Text('Attended', style: TextStyle(color: Colors.white)),
@@ -84,7 +91,7 @@ class EventVolunteersScreen extends StatelessWidget {
                       children: [
                         // Registration date
                         Text(regDate, style: const TextStyle(fontWeight: FontWeight.bold)),
-                        // View Profile Button
+                        // View Profile Button: shows dialog with more info
                         IconButton(
                           icon: const Icon(Icons.info_outline),
                           tooltip: 'View Profile',
@@ -114,7 +121,7 @@ class EventVolunteersScreen extends StatelessWidget {
                             );
                           },
                         ),
-                        // Assign Role Dropdown
+                        // Assign Role Dropdown: lets NGO change volunteer's role
                         StreamBuilder<DocumentSnapshot>(
                           stream: FirebaseFirestore.instance
                               .collection('events')
@@ -144,7 +151,7 @@ class EventVolunteersScreen extends StatelessWidget {
                             );
                           },
                         ),
-                        // Mark Attendance Button or Attended Icon
+                        // Mark Attendance Button: only shows if not attended yet
                         attended
                             ? const SizedBox.shrink()
                             : ElevatedButton(
@@ -167,7 +174,7 @@ class EventVolunteersScreen extends StatelessWidget {
                                           ? eventData['duration']
                                           : double.tryParse(eventData['duration'].toString()) ?? 1;
 
-                                  // 2. Mark attendance
+                                  // 2. Mark attendance for this volunteer
                                   await FirebaseFirestore.instance
                                       .collection('events')
                                       .doc(eventId)
@@ -175,7 +182,7 @@ class EventVolunteersScreen extends StatelessWidget {
                                       .doc(volunteerId)
                                       .update({'attended': true});
 
-                                  // 3. Update volunteer's total hours
+                                  // 3. Update volunteer's total service hours
                                   final userRef = FirebaseFirestore.instance.collection('users').doc(volunteerId);
                                   await FirebaseFirestore.instance.runTransaction((transaction) async {
                                     final userSnapshot = await transaction.get(userRef);

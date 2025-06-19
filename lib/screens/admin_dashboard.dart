@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+// Import your new settings screen
+import 'admin_settings_screen.dart';
+
+// Main Admin Dashboard Widget
 class AdminHome extends StatefulWidget {
   const AdminHome({super.key});
 
@@ -12,18 +16,23 @@ class AdminHome extends StatefulWidget {
 class _AdminHomeState extends State<AdminHome> {
   int _selectedIndex = 0;
 
+  // List of screens for navigation
   final List<Widget> _screens = [
     AllUsersScreen(),
     AllEventsScreen(),
     AnalyticsScreen(),
+    AdminSettingsScreen(), // Add settings screen here
   ];
 
+  // Titles for AppBar
   final List<String> _titles = [
     'All Users',
     'All Events',
     'Analytics',
+    'Settings', // Add settings title here
   ];
 
+  // Handle sidebar navigation
   void _onSelect(int index) {
     setState(() {
       _selectedIndex = index;
@@ -51,6 +60,7 @@ class _AdminHomeState extends State<AdminHome> {
           child: ListView(
             padding: EdgeInsets.zero,
             children: [
+              // Drawer header with admin info
               DrawerHeader(
                 decoration: const BoxDecoration(
                   color: Colors.transparent,
@@ -64,10 +74,13 @@ class _AdminHomeState extends State<AdminHome> {
                   ],
                 ),
               ),
+              // Sidebar navigation items
               _drawerItem(Icons.people, 'All Users', 0),
               _drawerItem(Icons.event, 'All Events', 1),
               _drawerItem(Icons.bar_chart, 'Analytics', 2),
+              _drawerItem(Icons.settings, 'Settings', 3), // Add settings item
               const Divider(color: Colors.white70),
+              // Logout button
               ListTile(
                 leading: const Icon(Icons.logout, color: Colors.white),
                 title: const Text('Logout', style: TextStyle(color: Colors.white, fontSize: 16)),
@@ -80,6 +93,7 @@ class _AdminHomeState extends State<AdminHome> {
           ),
         ),
       ),
+      // Main content area switches between screens
       body: AnimatedSwitcher(
         duration: const Duration(milliseconds: 300),
         child: Container(
@@ -90,6 +104,7 @@ class _AdminHomeState extends State<AdminHome> {
     );
   }
 
+  // Helper for sidebar items
   Widget _drawerItem(IconData icon, String title, int index) {
     return ListTile(
       leading: Icon(icon, color: Colors.white),
@@ -148,6 +163,7 @@ class AllUsersScreen extends StatelessWidget {
                       const SizedBox(height: 4),
                       Row(
                         children: [
+                          // Role chip (user, ngo, admin, verified ngo)
                           Chip(
                             label: Text(role[0].toUpperCase() + role.substring(1)),
                             backgroundColor: isVerified
@@ -159,6 +175,7 @@ class AllUsersScreen extends StatelessWidget {
                                 ? const Icon(Icons.verified, color: Colors.blue, size: 18)
                                 : null,
                           ),
+                          // Banned chip if user is banned
                           if (isBanned)
                             const Padding(
                               padding: EdgeInsets.only(left: 8.0),
@@ -174,6 +191,7 @@ class AllUsersScreen extends StatelessWidget {
                   trailing: Wrap(
                     spacing: 4,
                     children: [
+                      // Dropdown to change user role
                       DropdownButton<String>(
                         value: ['user', 'ngo', 'admin', 'verified ngo'].contains(role) ? role : 'user',
                         items: ['user', 'ngo', 'admin', 'verified ngo']
@@ -192,6 +210,7 @@ class AllUsersScreen extends StatelessWidget {
                         style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
                         dropdownColor: Colors.white,
                       ),
+                      // Verify/Unverify NGO button
                       if (isNGO)
                         IconButton(
                           icon: Icon(
@@ -206,6 +225,7 @@ class AllUsersScreen extends StatelessWidget {
                                 .update({'role': isVerified ? 'ngo' : 'verified ngo'});
                           },
                         ),
+                      // Ban/Unban user button
                       IconButton(
                         icon: Icon(
                           isBanned ? Icons.lock_open : Icons.block,
@@ -298,6 +318,7 @@ class AllEventsScreen extends StatelessWidget {
                   trailing: Wrap(
                     spacing: 4,
                     children: [
+                      // Approve/Unapprove event button
                       IconButton(
                         icon: Icon(
                           isApproved ? Icons.check_circle : Icons.hourglass_empty,
@@ -311,6 +332,7 @@ class AllEventsScreen extends StatelessWidget {
                               .update({'approved': !isApproved});
                         },
                       ),
+                      // Delete event button
                       IconButton(
                         icon: const Icon(Icons.delete, color: Colors.red),
                         tooltip: 'Delete Event',
@@ -353,11 +375,13 @@ class AllEventsScreen extends StatelessWidget {
 class AnalyticsScreen extends StatelessWidget {
   const AnalyticsScreen({super.key});
 
+  // Helper to get count of documents in a collection
   Future<int> _getCount(String collection) async {
     final snap = await FirebaseFirestore.instance.collection(collection).get();
     return snap.docs.length;
   }
 
+  // Helper to get count of verified NGOs
   Future<int> _getVerifiedNGOs() async {
     final snap = await FirebaseFirestore.instance
         .collection('users')
@@ -366,6 +390,7 @@ class AnalyticsScreen extends StatelessWidget {
     return snap.docs.length;
   }
 
+  // Helper to get count of pending events
   Future<int> _getPendingEvents() async {
     final snap = await FirebaseFirestore.instance
         .collection('events')
@@ -407,6 +432,7 @@ class AnalyticsScreen extends StatelessWidget {
     );
   }
 
+  // Helper to build a stat card
   Widget _statCard(IconData icon, String label, int value, Color color) {
     return Card(
       elevation: 4,

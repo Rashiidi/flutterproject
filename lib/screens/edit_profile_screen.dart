@@ -16,6 +16,8 @@ class EditProfileScreen extends StatefulWidget {
 
 class _EditProfileScreenState extends State<EditProfileScreen> {
   final displayNameCtrl = TextEditingController();
+  final phoneCtrl = TextEditingController();
+  final bioCtrl = TextEditingController();
   XFile? _pickedImage;
   bool _uploading = false;
   String? _profileImageUrl;
@@ -32,6 +34,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
     final data = doc.data();
     displayNameCtrl.text = data?['displayName'] ?? '';
+    phoneCtrl.text = data?['phone'] ?? '';
+    bioCtrl.text = data?['bio'] ?? '';
     setState(() {
       _profileImageUrl = data?['profileImageUrl'];
     });
@@ -104,6 +108,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
       'displayName': displayNameCtrl.text,
       'profileImageUrl': imageUrl,
+      'phone': phoneCtrl.text,
+      'bio': bioCtrl.text,
     });
     if (user.displayName != displayNameCtrl.text) {
       await user.updateDisplayName(displayNameCtrl.text);
@@ -137,6 +143,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             TextField(
               controller: displayNameCtrl,
               decoration: const InputDecoration(labelText: 'Display Name'),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: phoneCtrl,
+              decoration: const InputDecoration(labelText: 'Phone Number'),
+              keyboardType: TextInputType.phone,
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: bioCtrl,
+              decoration: const InputDecoration(labelText: 'Bio'),
+              maxLines: 2,
             ),
             const SizedBox(height: 24),
             ElevatedButton(

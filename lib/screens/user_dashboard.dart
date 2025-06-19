@@ -4,7 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'event_discovery_screen.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
-import 'edit_profile_screen.dart'; // <-- Import the profile editing screen
+import 'edit_profile_screen.dart';
 
 class UserHome extends StatefulWidget {
   const UserHome({super.key});
@@ -48,6 +48,14 @@ class _UserHomeState extends State<UserHome> {
     return doc.data();
   }
 
+  // Fetch profile for DrawerHeader
+  Future<Map<String, dynamic>?> fetchProfile() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return null;
+    final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+    return doc.data();
+  }
+
   void _onSelect(int index) {
     setState(() {
       _selectedIndex = index;
@@ -81,20 +89,37 @@ class _UserHomeState extends State<UserHome> {
                 decoration: const BoxDecoration(
                   color: Colors.transparent,
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Icon(Icons.volunteer_activism, size: 48, color: Colors.white),
-                    const SizedBox(height: 8),
-                    Text(
-                      user?.displayName ?? 'Volunteer',
-                      style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
-                    ),
-                    Text(
-                      user?.email ?? '',
-                      style: const TextStyle(color: Colors.white70, fontSize: 14),
-                    ),
-                  ],
+                child: FutureBuilder<Map<String, dynamic>?>(
+                  future: fetchProfile(),
+                  builder: (context, snapshot) {
+                    final data = snapshot.data;
+                    final profileImageUrl = data?['profileImageUrl'] as String?;
+                    final displayName = data?['displayName'] ?? user?.displayName ?? 'Volunteer';
+                    final email = data?['email'] ?? user?.email ?? '';
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        CircleAvatar(
+                          radius: 32,
+                          backgroundImage: (profileImageUrl != null && profileImageUrl.isNotEmpty)
+                              ? NetworkImage(profileImageUrl)
+                              : null,
+                          child: (profileImageUrl == null || profileImageUrl.isEmpty)
+                              ? const Icon(Icons.person, size: 32)
+                              : null,
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          displayName,
+                          style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                        ),
+                        Text(
+                          email,
+                          style: const TextStyle(color: Colors.white70, fontSize: 14),
+                        ),
+                      ],
+                    );
+                  },
                 ),
               ),
               _drawerItem(Icons.event_available, 'Registered Events', 0),
@@ -168,6 +193,7 @@ class _RegisteredEventsScreen extends StatelessWidget {
           builder: (context, snapshot) {
             final profile = snapshot.data;
             final hours = profile?['serviceHours'] ?? 0;
+            final profileImageUrl = profile?['profileImageUrl'] as String?;
             return Card(
               margin: const EdgeInsets.all(16),
               elevation: 4,
@@ -176,9 +202,14 @@ class _RegisteredEventsScreen extends StatelessWidget {
                 padding: const EdgeInsets.all(16),
                 child: Row(
                   children: [
-                    const CircleAvatar(
+                    CircleAvatar(
                       radius: 28,
-                      child: Icon(Icons.person, size: 32),
+                      backgroundImage: (profileImageUrl != null && profileImageUrl.isNotEmpty)
+                          ? NetworkImage(profileImageUrl)
+                          : null,
+                      child: (profileImageUrl == null || profileImageUrl.isEmpty)
+                          ? const Icon(Icons.person, size: 32)
+                          : null,
                     ),
                     const SizedBox(width: 16),
                     Expanded(
@@ -186,10 +217,14 @@ class _RegisteredEventsScreen extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            user?.displayName ?? 'No Name',
+                            profile?['displayName'] ?? user?.displayName ?? 'No Name',
                             style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                           ),
-                          Text(user?.email ?? ''),
+                          Text(profile?['email'] ?? user?.email ?? ''),
+                          if ((profile?['phone'] ?? '').toString().isNotEmpty)
+                            Text('Phone: ${profile?['phone']}'),
+                          if ((profile?['bio'] ?? '').toString().isNotEmpty)
+                            Text('Bio: ${profile?['bio']}'),
                           const SizedBox(height: 8),
                           Text(
                             'Service Hours: ${hours.toStringAsFixed(1)}',

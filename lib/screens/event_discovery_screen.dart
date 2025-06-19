@@ -22,6 +22,7 @@ class _EventDiscoveryScreenState extends State<EventDiscoveryScreen> {
     _fetchLocation();
   }
 
+  // Get the user's current location
   Future<void> _fetchLocation() async {
     final pos = await LocationHelper.getCurrentLocation();
     setState(() {
@@ -29,6 +30,7 @@ class _EventDiscoveryScreenState extends State<EventDiscoveryScreen> {
     });
   }
 
+  // Register the current user for an event
   Future<void> registerForEvent(String eventId) async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
@@ -45,6 +47,7 @@ class _EventDiscoveryScreenState extends State<EventDiscoveryScreen> {
     });
   }
 
+  // Check if the current user is already registered for an event
   Future<bool> isRegistered(String eventId, String userId) async {
     final doc = await FirebaseFirestore.instance
         .collection('events')
@@ -55,7 +58,7 @@ class _EventDiscoveryScreenState extends State<EventDiscoveryScreen> {
     return doc.exists;
   }
 
-  // Helper to get NGO name by ID (returns Future<String>)
+  // Helper to get NGO name by ID
   Future<String> getNgoName(String ngoId) async {
     if (ngoId.isEmpty) return '';
     final doc = await FirebaseFirestore.instance.collection('users').doc(ngoId).get();
@@ -73,11 +76,13 @@ class _EventDiscoveryScreenState extends State<EventDiscoveryScreen> {
       ),
       body: Column(
         children: [
+          // Show a loading message while fetching location
           if (_userPosition == null)
             const Padding(
               padding: EdgeInsets.all(16.0),
               child: Text('Fetching your location...'),
             ),
+          // Slider to filter events by distance
           if (_userPosition != null)
             Padding(
               padding: const EdgeInsets.all(8.0),
@@ -96,7 +101,7 @@ class _EventDiscoveryScreenState extends State<EventDiscoveryScreen> {
                 ],
               ),
             ),
-          // --- Search Bar ---
+          // Search bar for title/location
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             child: TextField(
@@ -109,6 +114,7 @@ class _EventDiscoveryScreenState extends State<EventDiscoveryScreen> {
               onChanged: (val) => setState(() => _searchQuery = val.trim().toLowerCase()),
             ),
           ),
+          // Main event list
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
@@ -138,7 +144,7 @@ class _EventDiscoveryScreenState extends State<EventDiscoveryScreen> {
                         return distance <= _filterRadius;
                       }).toList();
 
-                // --- Apply search filter ---
+                // Filter by search query (title or location)
                 if (_searchQuery.isNotEmpty) {
                   filteredDocs = filteredDocs.where((doc) {
                     final event = doc.data() as Map<String, dynamic>;
@@ -152,6 +158,7 @@ class _EventDiscoveryScreenState extends State<EventDiscoveryScreen> {
                   return const Center(child: Text('No nearby events found.'));
                 }
 
+                // Build the event cards
                 return ListView.builder(
                   itemCount: filteredDocs.length,
                   itemBuilder: (context, index) {
@@ -181,7 +188,7 @@ class _EventDiscoveryScreenState extends State<EventDiscoveryScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Event image (placeholder or from Firestore)
+                          // Event image (from Firestore or placeholder)
                           ClipRRect(
                             borderRadius: const BorderRadius.only(
                                 topLeft: Radius.circular(16), topRight: Radius.circular(16)),
@@ -233,6 +240,7 @@ class _EventDiscoveryScreenState extends State<EventDiscoveryScreen> {
                                           Text(dateStr, style: const TextStyle(fontSize: 13)),
                                         ],
                                       ),
+                                      // Show distance if available
                                       if (event['latitude'] != null &&
                                           event['longitude'] != null &&
                                           _userPosition != null)
@@ -249,6 +257,7 @@ class _EventDiscoveryScreenState extends State<EventDiscoveryScreen> {
                                           ),
                                         ),
                                       const SizedBox(height: 6),
+                                      // Show NGO name (fetched by ID)
                                       FutureBuilder<String>(
                                         future: getNgoName(ngoId),
                                         builder: (context, ngoSnap) {
@@ -271,7 +280,7 @@ class _EventDiscoveryScreenState extends State<EventDiscoveryScreen> {
                                     ],
                                   ),
                                 ),
-                                // Status chip
+                                // Status chip (Approved/Pending)
                                 Column(
                                   crossAxisAlignment: CrossAxisAlignment.end,
                                   children: [
@@ -290,6 +299,7 @@ class _EventDiscoveryScreenState extends State<EventDiscoveryScreen> {
                               ],
                             ),
                           ),
+                          // Register button or Registered text
                           Padding(
                             padding: const EdgeInsets.only(
                                 left: 16, right: 16, bottom: 16, top: 0),
